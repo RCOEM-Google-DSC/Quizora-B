@@ -8,8 +8,10 @@ type Props = {
 
 export default function AuthShell({ side, big, children }: Props) {
   return (
-    <div className="flex flex-wrap">
-      <div className={`flex min-h-[320px] flex-[1_1_420px] items-end rounded-tr-[240px] p-8 sm:min-h-[640px] sm:p-12 ${side}`}>
+    // min-h makes the page at least as tall as the screen under the navbar.
+    // -mb-24 cancels the footer's top margin, so the colored panel runs down to the footer.
+    <div className="-mb-24 flex min-h-[calc(100svh-75px)] flex-wrap">
+      <div className={`flex min-h-[320px] flex-[1_1_420px] items-end rounded-tr-[240px] p-8 sm:p-12 ${side}`}>
         <div className="display" style={{ fontSize: "clamp(4rem, 9vw, 8rem)" }}>
           {big}
         </div>
