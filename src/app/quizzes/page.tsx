@@ -1,157 +1,120 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { mockQuizzes } from "@/data/mock";
-import { QuizCard } from "@/components/quiz/QuizCard";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Sparkles, Filter, X } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { quizzes, QUESTION_SECONDS, type Difficulty } from "@/lib/quizzes";
 
-const categories = ["All", "Programming", "Frontend", "Computer Science", "Backend", "Architecture"];
-const difficulties = ["All", "easy", "medium", "hard"];
+const cardStyles = [
+  "bg-cobalt text-white rounded-tl-[160px]",
+  "bg-tomato text-ink rounded-tr-[160px]",
+  "bg-sun text-ink rounded-bl-[160px]",
+  "bg-ink text-white rounded-br-[160px]",
+  "bg-mint text-ink rounded-tl-[160px]",
+  "bg-cobalt text-white rounded-tr-[160px]",
+];
+
+const categories = ["all", ...Array.from(new Set(quizzes.map((q) => q.category)))];
+const difficulties: ("any" | Difficulty)[] = ["any", "easy", "medium", "hard"];
 
 export default function QuizzesPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [difficulty, setDifficulty] = useState<"any" | Difficulty>("any");
 
-  const filteredQuizzes = useMemo(() => {
-    return mockQuizzes.filter((quiz) => {
-      const matchesSearch =
-        quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        quiz.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const visible = useMemo(
+    () =>
+      quizzes.filter(
+        (q) =>
+          q.title.toLowerCase().includes(search.trim().toLowerCase()) &&
+          (category === "all" || q.category === category) &&
+          (difficulty === "any" || q.difficulty === difficulty),
+      ),
+    [search, category, difficulty],
+  );
 
-      const matchesCategory =
-        selectedCategory === "All" || quiz.category === selectedCategory;
-
-      const matchesDifficulty =
-        selectedDifficulty === "All" || quiz.difficulty === selectedDifficulty;
-
-      return matchesSearch && matchesCategory && matchesDifficulty;
-    });
-  }, [searchQuery, selectedCategory, selectedDifficulty]);
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedCategory("All");
-    setSelectedDifficulty("All");
-  };
-
-  const hasActiveFilters =
-    searchQuery !== "" || selectedCategory !== "All" || selectedDifficulty !== "All";
+  function reset() {
+    setSearch("");
+    setCategory("all");
+    setDifficulty("any");
+  }
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-7xl">
-      {/* Header section */}
-      <div className="mb-8 space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full border bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
-          <Sparkles className="h-3.5 w-3.5" />
-          Test Your Knowledge
-        </div>
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">
-          Available Quizzes
-        </h1>
-        <p className="text-muted-foreground text-base max-w-2xl">
-          Choose a challenge from diverse topics. Answer the questions before the timer runs out and earn your spot on the live leaderboard.
-        </p>
+    <section className="mx-auto max-w-[1200px] px-8 pb-12 pt-8">
+      <p className="mono mb-4 text-sm">Q2.</p>
+      <h1 className="display mb-8" style={{ fontSize: "clamp(3.5rem, 10vw, 8.75rem)" }}>pick a quiz.</h1>
+
+      <label htmlFor="search" className="sr-only">Search quizzes</label>
+      <input
+        id="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="search quizzes"
+        className="mb-5 h-[60px] w-full max-w-[520px] rounded-full border-[3px] border-ink bg-white px-6 text-lg font-semibold placeholder:font-normal placeholder:text-muted-foreground"
+      />
+
+      <div className="mb-4 flex flex-wrap gap-2.5" role="group" aria-label="Category">
+        {categories.map((c) => (
+          <button
+            key={c}
+            type="button"
+            aria-pressed={category === c}
+            onClick={() => setCategory(c)}
+            className={`rounded-full border-[3px] border-ink px-[18px] py-2 font-semibold ${category === c ? "bg-ink text-white" : ""}`}
+          >
+            {c}
+          </button>
+        ))}
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="mb-8 space-y-4 rounded-xl border bg-card p-4 shadow-sm md:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search quizzes by title or topic..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-background"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Difficulty selector */}
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
-            <span className="text-xs font-medium text-muted-foreground hidden sm:block">
-              Difficulty:
-            </span>
-            <div className="flex rounded-lg border bg-muted/50 p-1 text-xs">
-              {difficulties.map((diff) => (
-                <button
-                  key={diff}
-                  onClick={() => setSelectedDifficulty(diff)}
-                  className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                    selectedDifficulty === diff
-                      ? "bg-background text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {diff}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Category Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/50">
-          <span className="text-xs font-medium text-muted-foreground mr-1">Categories:</span>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`rounded-full px-3.5 py-1 text-xs font-medium transition-all ${
-                selectedCategory === cat
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="h-7 text-xs text-muted-foreground hover:text-destructive ml-auto gap-1"
-            >
-              <X className="h-3 w-3" />
-              Clear filters
-            </Button>
-          )}
-        </div>
+      <div className="mono mb-10 flex flex-wrap items-center gap-2 text-[13px] uppercase" role="group" aria-label="Difficulty">
+        <span>Difficulty:</span>
+        {difficulties.map((d) => (
+          <button
+            key={d}
+            type="button"
+            aria-pressed={difficulty === d}
+            onClick={() => setDifficulty(d)}
+            className={`rounded-full border-2 border-ink px-3 py-1 uppercase ${difficulty === d ? "bg-ink text-white" : ""}`}
+          >
+            {d}
+          </button>
+        ))}
       </div>
 
-      {/* Quizzes Grid */}
-      {filteredQuizzes.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredQuizzes.map((quiz) => (
-            <QuizCard key={quiz.id} quiz={quiz} />
-          ))}
+      {visible.length === 0 ? (
+        <div className="rounded-tr-[120px] bg-sun p-10">
+          <p className="display text-5xl">no quiz matches.</p>
+          <button type="button" onClick={reset} className="display mt-6 rounded-full bg-ink px-7 py-3 text-2xl text-white">
+            clear filters
+          </button>
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed p-12 text-center">
-          <h3 className="text-lg font-semibold text-foreground mb-1">No quizzes found</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Try adjusting your search or filter keywords to find what you&apos;re looking for.
-          </p>
-          <Button variant="outline" size="sm" onClick={clearFilters}>
-            Reset all filters
-          </Button>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {visible.map((q) => {
+            const style = cardStyles[quizzes.indexOf(q) % cardStyles.length];
+            const minutes = Math.max(1, Math.round((q.questions.length * QUESTION_SECONDS) / 60));
+            return (
+              <Link
+                key={q.id}
+                href={`/quizzes/${q.id}`}
+                className={`flex min-h-[300px] flex-col justify-between p-7 transition-transform hover:-translate-y-1.5 ${style}`}
+              >
+                <div className="mono flex items-center justify-between text-[13px] uppercase">
+                  <span>{q.category}</span>
+                  <span className="rounded-full border-2 border-current px-3 py-0.5 text-xs">{q.difficulty}</span>
+                </div>
+                <div className="display text-[44px]">{q.title}</div>
+                <div className="flex items-end justify-between">
+                  <span className="mono text-[13px] uppercase">
+                    {q.questions.length} questions · {minutes} min
+                  </span>
+                  <span className="display text-3xl">start →</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
-    </div>
+    </section>
   );
 }
